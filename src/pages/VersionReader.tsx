@@ -208,7 +208,7 @@ const VersionReader = () => {
                     <p className="mb-6 text-muted-foreground">{current.description}</p>
                   )}
                   {current?.content.split("\n\n").map((para, i) => (
-                    <p key={i} className="mb-5">
+                    <p key={i} className="mb-5 text-[18px] md:text-base">
                       {para}
                     </p>
                   ))}

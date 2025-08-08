@@ -11,7 +11,9 @@ import { ArrowLeft } from 'lucide-react'
 const Reader = () => {
   const { slug } = useParams()
   const current = useMemo(() => book.chapters.find(c => c.slug === slug) ?? book.chapters[0], [slug])
-  const [fontSize, setFontSize] = useState<number>(18)
+  const [fontSize, setFontSize] = useState<number>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches ? 20 : 18
+  )
 
   const inc = () => setFontSize((v) => Math.min(28, v + 1))
   const dec = () => setFontSize((v) => Math.max(14, v - 1))
