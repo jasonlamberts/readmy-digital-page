@@ -7,6 +7,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Reader from "./pages/Reader";
+import ImportBook from "./pages/ImportBook";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -20,6 +21,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/read" element={<Navigate to="/read/introduction" replace />} />
             <Route path="/read/:slug" element={<Reader />} />
+            <Route path="/import" element={<ImportBook />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
