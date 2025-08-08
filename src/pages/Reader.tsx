@@ -89,9 +89,6 @@ const Reader = () => {
             <div id="reader-content" className="max-h-[calc(100vh-8rem)] overflow-y-auto p-6">
               <article className="reader-article mx-auto max-w-3xl">
                 <h2 className="mb-2 text-3xl font-semibold tracking-tight">{current.title}</h2>
-                {current.description && (
-                  <p className="mb-6 text-muted-foreground">{current.description}</p>
-                )}
                 {current.content.split('\n\n').map((para, i) => (
                   <p key={i} className="mb-5" style={{ fontSize }}>
                     {para}
