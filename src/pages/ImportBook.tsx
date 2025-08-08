@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 
-// Utility to create URL-friendly slugs
 function slugify(input: string) {
   return input
     .toLowerCase()
@@ -17,7 +16,6 @@ function slugify(input: string) {
     .replace(/-+/g, "-")
 }
 
-// Extract a short description from content
 function summarize(content: string, max = 160) {
   const text = content.replace(/\s+/g, " ").trim()
   if (!text) return undefined
@@ -27,162 +25,97 @@ function summarize(content: string, max = 160) {
   return text.slice(0, max - 1) + "…"
 }
 
-// Parse manuscript into chapters using common patterns
-function parseManuscript(text: string) {
-  const lines = text.split(/\r?\n/)
-  type Section = { title: string; content: string }
-  const sections: Section[] = []
-
-  const headerPatterns = [
-    { type: "md", regex: /^##\s+(.+)$/i },
-    { type: "chapter", regex: /^chapter\s+(\d+)(?:[:.\-\s]+(.*))?$/i },
-    { type: "special", regex: /^(introduction|prologue|epilogue|preface|afterword)\s*$/i },
-  ]
-
-  let currentTitle: string | null = null
-  let buffer: string[] = []
-
-  const flush = () => {
-    if (currentTitle) {
-      const content = buffer.join("\n").trim()
-      sections.push({ title: currentTitle, content })
-    }
-    buffer = []
-  }
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim()
-    let matched = false
-    for (const p of headerPatterns) {
-      const m = line.match(p.regex as RegExp)
-      if (m) {
-        if (currentTitle !== null) flush()
-        if (p.type === "md") {
-          currentTitle = m[1].trim()
-        } else if (p.type === "chapter") {
-          const n = m[1]
-          const t = (m[2] || "").trim()
-          currentTitle = t ? `Chapter ${n}: ${t}` : `Chapter ${n}`
-        } else {
-          currentTitle = line
-            .toLowerCase()
-            .replace(/(^|\s)\S/g, (s) => s.toUpperCase())
-        }
-        matched = true
-        break
-      }
-    }
-    if (!matched) buffer.push(rawLine)
-  }
-  if (currentTitle !== null) flush()
-
-  // If no headers found, treat entire text as one chapter
-  if (sections.length === 0 && text.trim()) {
-    sections.push({ title: "Introduction", content: text.trim() })
-  }
-
-  // Generate unique slugs
-  const seen = new Map<string, number>()
-  const chapters = sections.map((s) => {
-    let base = slugify(s.title)
-    if (!base) base = "chapter"
-    const count = (seen.get(base) || 0) + 1
-    seen.set(base, count)
-    const unique = count > 1 ? `${base}-${count}` : base
-    return {
-      slug: unique,
-      title: s.title,
-      description: summarize(s.content),
-      content: s.content,
-    }
-  })
-
-  return chapters
-}
-
 const ImportBook = () => {
   const { toast } = useToast()
-  const [title, setTitle] = useState("")
-  const [subtitle, setSubtitle] = useState("")
+  const [bookTitle, setBookTitle] = useState("The Divine Gene")
   const [author, setAuthor] = useState("")
-  const [description, setDescription] = useState("")
-  const [coverAlt, setCoverAlt] = useState("")
-  const [raw, setRaw] = useState("")
+
+  const [chapterTitle, setChapterTitle] = useState("")
+  const [chapterContent, setChapterContent] = useState("")
+  const baseSlug = useMemo(() => slugify(chapterTitle) || "chapter", [chapterTitle])
+  const summary = useMemo(() => summarize(chapterContent), [chapterContent])
+  const canSave = bookTitle.trim() && chapterTitle.trim() && chapterContent.trim()
   const [saving, setSaving] = useState(false)
 
-  const chapters = useMemo(() => parseManuscript(raw), [raw])
+  const ensureBook = useCallback(async (title: string) => {
+    const { data: existing, error: existErr } = await supabase
+      .from("books")
+      .select("id")
+      .eq("title", title.trim())
+      .maybeSingle()
 
-  const canSave = title.trim() && author.trim() && chapters.length > 0
+    if (existErr && existErr.code !== "PGRST116") throw existErr
+
+    if (existing?.id) {
+      // Optionally update author if provided
+      if (author.trim()) {
+        await supabase.from("books").update({ author: author.trim() }).eq("id", existing.id)
+      }
+      return existing.id as string
+    }
+
+    const { data: inserted, error: insErr } = await supabase
+      .from("books")
+      .insert({ title: title.trim(), author: author.trim() || null })
+      .select("id")
+      .single()
+
+    if (insErr) throw insErr
+    return inserted!.id as string
+  }, [author])
+
+  const nextOrderIndex = useCallback(async (bookId: string) => {
+    const { data, error } = await supabase
+      .from("chapters")
+      .select("order_index")
+      .eq("book_id", bookId)
+      .order("order_index", { ascending: false })
+      .limit(1)
+    if (error) throw error
+    const max = data && data.length > 0 ? data[0].order_index || 0 : 0
+    return (max as number) + 1
+  }, [])
+
+  const uniqueSlug = useCallback(async (bookId: string, slug: string) => {
+    // Try the base slug; if taken, append -2, -3, ... up to -10 then timestamp fallback
+    let candidate = slug
+    for (let i = 0; i < 10; i++) {
+      const { data } = await supabase
+        .from("chapters")
+        .select("id")
+        .eq("book_id", bookId)
+        .eq("slug", candidate)
+        .maybeSingle()
+      if (!data) return candidate
+      candidate = `${slug}-${i + 2}`
+    }
+    return `${slug}-${Date.now().toString(36).slice(-4)}`
+  }, [])
 
   const handleSave = useCallback(async () => {
     if (!canSave) return
     try {
       setSaving(true)
+      const bookId = await ensureBook(bookTitle)
+      const order = await nextOrderIndex(bookId)
+      const finalSlug = await uniqueSlug(bookId, baseSlug)
 
-      // Check if a book with the same title exists
-      const { data: existing, error: existErr } = await supabase
-        .from("books")
-        .select("id")
-        .eq("title", title.trim())
-        .maybeSingle()
-
-      if (existErr && existErr.code !== "PGRST116") {
-        throw existErr
-      }
-
-      let bookId: string | undefined = existing?.id
-
-      if (bookId) {
-        const { error: updErr } = await supabase
-          .from("books")
-          .update({
-            subtitle: subtitle || null,
-            author: author.trim(),
-            description: description || null,
-            cover_alt: coverAlt || null,
-          })
-          .eq("id", bookId)
-        if (updErr) throw updErr
-
-        // Clear old chapters
-        const { error: delErr } = await supabase
-          .from("chapters")
-          .delete()
-          .eq("book_id", bookId)
-        if (delErr) throw delErr
-      } else {
-        const { data: ins, error: insErr } = await supabase
-          .from("books")
-          .insert({
-            title: title.trim(),
-            subtitle: subtitle || null,
-            author: author.trim(),
-            description: description || null,
-            cover_alt: coverAlt || null,
-          })
-          .select("id")
-          .single()
-        if (insErr) throw insErr
-        bookId = ins!.id
-      }
-
-      // Insert chapters in order
-      const { error: chErr } = await supabase.from("chapters").insert(
-        chapters.map((c, idx) => ({
-          book_id: bookId!,
-          slug: c.slug,
-          title: c.title,
-          description: c.description || null,
-          content: c.content,
-          order_index: idx + 1,
-        }))
-      )
+      const { error: chErr } = await supabase.from("chapters").insert({
+        book_id: bookId,
+        slug: finalSlug,
+        title: chapterTitle.trim(),
+        description: summary || null,
+        content: chapterContent,
+        order_index: order,
+      })
       if (chErr) throw chErr
 
       toast({
-        title: "Book saved to Supabase",
-        description: "Your chapters have been imported successfully.",
+        title: "Chapter saved",
+        description: "We analyzed the content and generated a summary for the TOC.",
       })
+      setChapterTitle("")
+      setChapterContent("")
     } catch (e: any) {
       toast({
         title: "Failed to save",
@@ -192,70 +125,65 @@ const ImportBook = () => {
     } finally {
       setSaving(false)
     }
-  }, [canSave, title, subtitle, author, description, coverAlt, chapters, toast])
+  }, [canSave, ensureBook, bookTitle, nextOrderIndex, uniqueSlug, baseSlug, chapterTitle, chapterContent, summary, toast])
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "Import Book",
-    description: "Paste your manuscript; chapters are auto-detected and saved to Supabase.",
+    name: "Import Chapter",
+    description: "Paste a chapter; we auto-generate its summary and save to Supabase.",
   }
 
   return (
     <main className="min-h-screen bg-background">
       <SEO
-        title="Import Book — Paste & Save to Supabase"
-        description="Paste your manuscript; we'll detect chapters and save to Supabase."
+        title="Import Chapter — Save to Supabase"
+        description="Paste a single chapter; we'll generate a summary for the table of contents."
         jsonLd={jsonLd}
       />
       <div className="container py-8">
         <header className="mb-6">
-          <h1 className="text-2xl font-semibold">Import Book</h1>
+          <h1 className="text-2xl font-semibold">Import Chapter</h1>
           <p className="text-muted-foreground">
-            Paste your full text below. We detect chapters like "Chapter 1: Title", "Introduction", or Markdown headings (## Title).
+            Add one chapter at a time. We create a slug and summary automatically for your table of contents.
           </p>
         </header>
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Book Details</CardTitle>
+              <CardTitle>Book & Chapter</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm text-muted-foreground">Title</label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="The Divine Gene" />
+                  <label className="mb-1 block text-sm text-muted-foreground">Book Title</label>
+                  <Input value={bookTitle} onChange={(e) => setBookTitle(e.target.value)} placeholder="The Divine Gene" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-muted-foreground">Subtitle</label>
-                  <Input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="A Journey Through..." />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm text-muted-foreground">Author</label>
+                  <label className="mb-1 block text-sm text-muted-foreground">Author (optional)</label>
                   <Input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Your Name" />
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm text-muted-foreground">Cover Alt Text</label>
-                  <Input value={coverAlt} onChange={(e) => setCoverAlt(e.target.value)} placeholder="Abstract light over open book" />
-                </div>
               </div>
+
               <div>
-                <label className="mb-1 block text-sm text-muted-foreground">Short Description</label>
-                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="A concise overview of your book." />
+                <label className="mb-1 block text-sm text-muted-foreground">Chapter Title</label>
+                <Input value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} placeholder="Chapter X: Title" />
               </div>
+
               <div>
-                <label className="mb-1 block text-sm text-muted-foreground">Manuscript</label>
+                <label className="mb-1 block text-sm text-muted-foreground">Chapter Content</label>
                 <Textarea
-                  value={raw}
-                  onChange={(e) => setRaw(e.target.value)}
-                  placeholder={"Paste your entire manuscript here. Use headings like 'Chapter 1: Title' or '## Title'."}
-                  className="min-h-[280px]"
+                  value={chapterContent}
+                  onChange={(e) => setChapterContent(e.target.value)}
+                  placeholder={"Paste the chapter content here."}
+                  className="min-h-[260px]"
                 />
               </div>
+
               <div className="flex items-center justify-end gap-3">
                 <Button onClick={handleSave} disabled={!canSave || saving}>
-                  {saving ? "Saving…" : "Save to Supabase"}
+                  {saving ? "Saving…" : "Save Chapter"}
                 </Button>
               </div>
             </CardContent>
@@ -263,30 +191,27 @@ const ImportBook = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Preview ({chapters.length} chapter{chapters.length === 1 ? "" : "s"})</CardTitle>
+              <CardTitle>Preview</CardTitle>
             </CardHeader>
-            <CardContent>
-              {chapters.length === 0 ? (
-                <p className="text-muted-foreground">Chapters will appear here after you paste your text.</p>
-              ) : (
-                <ol className="space-y-4">
-                  {chapters.map((c, i) => (
-                    <li key={c.slug} className="rounded-md border p-3">
-                      <div className="mb-1 text-sm text-muted-foreground">{i + 1}. {c.slug}</div>
-                      <div className="font-medium">{c.title}</div>
-                      {c.description && (
-                        <div className="text-sm text-muted-foreground">{c.description}</div>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              )}
+            <CardContent className="space-y-3">
+              <div>
+                <div className="text-sm text-muted-foreground">Slug</div>
+                <div className="font-mono text-sm">{baseSlug}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Summary (for TOC)</div>
+                {summary ? (
+                  <div className="text-sm">{summary}</div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">Type content to generate a summary…</div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
 
         <aside className="mt-6 text-sm text-muted-foreground">
-          Note: Reading pages currently use the built-in sample book. I can switch them to load from Supabase after your import—just say the word.
+          Tip: Keep importing chapters; order is assigned automatically. We can switch the reader to load from Supabase when you're ready.
         </aside>
       </div>
     </main>

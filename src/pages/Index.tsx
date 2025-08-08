@@ -40,7 +40,7 @@ const Index = () => {
                   <Link to={`/read/${book.chapters[0].slug}`}>Table of Contents</Link>
                 </Button>
                 <Button asChild variant="secondary" size="lg">
-                  <Link to="/import">Import Book</Link>
+                  <Link to="/import">Import Chapter</Link>
                 </Button>
               </div>
             </div>
