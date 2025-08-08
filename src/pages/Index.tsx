@@ -119,17 +119,17 @@ const Index = () => {
             <p className="mb-6 text-lg text-muted-foreground">
               Authored by Jason Lamberts
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button variant="hero" size="xl" onClick={() => setVersionsOpen(true)}>
-                Start Reading
-              </Button>
-                <Button asChild variant="secondary" size="lg">
+              <div className="flex flex-col items-center gap-4">
+                <Button variant="hero" size="xl" onClick={() => setVersionsOpen(true)}>
+                  Start Reading
+                </Button>
+                <Button asChild variant="secondary" size="sm">
                   <Link to="/import">Import Chapter</Link>
                 </Button>
-                <Button asChild variant="secondary" size="lg">
+                <Button asChild variant="secondary" size="sm">
                   <Link to="/import-full">Import Full Book</Link>
                 </Button>
-            </div>
+              </div>
           </div>
         </div>
       </section>
