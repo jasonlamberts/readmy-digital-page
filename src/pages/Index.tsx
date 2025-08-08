@@ -94,12 +94,9 @@ const Index = () => {
         image={hero}
         jsonLd={jsonLd}
       />
-      <section
-        className="relative overflow-hidden bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${hero})` }}
-      >
+      <section className="relative overflow-hidden">
         <div className="hero-gradient absolute inset-0" aria-hidden />
-        <div className="container relative min-h-[70vh] py-16 flex items-center">
+        <div className="container relative min-h-screen py-20 flex items-center justify-center">
           <div className="glass-card rounded-2xl p-8 max-w-2xl">
             <h1 className="mb-4 text-4xl font-bold leading-tight">
               The Divine Gene
@@ -107,7 +104,7 @@ const Index = () => {
             <p className="mb-6 text-lg text-muted-foreground">
               {autoSummary ?? 'Import Version 1 to generate a summary shown here.'}
             </p>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <Button asChild variant="hero" size="xl">
                 <Link to={primaryReadHref}>Start Reading</Link>
               </Button>
