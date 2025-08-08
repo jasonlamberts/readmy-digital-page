@@ -14,7 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          author: string
+          cover_alt: string | null
+          created_at: string
+          description: string | null
+          id: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author: string
+          cover_alt?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          cover_alt?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chapters: {
+        Row: {
+          book_id: string
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          content: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
