@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import Reader from "./pages/Reader";
 import ImportBook from "./pages/ImportBook";
 import VersionReader from "./pages/VersionReader";
+import ImportFullBook from "./pages/ImportFullBook";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -23,6 +24,7 @@ const App = () => (
               <Route path="/read" element={<Navigate to="/read/introduction" replace />} />
               <Route path="/read/:slug" element={<Reader />} />
               <Route path="/import" element={<ImportBook />} />
+              <Route path="/import-full" element={<ImportFullBook />} />
               <Route path="/book/the-divine-gene/:version/:slug" element={<VersionReader />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

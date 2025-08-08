@@ -115,6 +115,9 @@ const Index = () => {
                 <Button asChild variant="secondary" size="lg">
                   <Link to="/import">Import Chapter</Link>
                 </Button>
+                <Button asChild variant="secondary" size="lg">
+                  <Link to="/import-full">Import Full Book</Link>
+                </Button>
               </div>
             </div>
           </div>
