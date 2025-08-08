@@ -1,4 +1,4 @@
-import hero from '@/assets/hero-reading.jpg'
+import hero from '@/assets/hero-divine.jpg'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { SEO } from '@/components/SEO'
@@ -124,7 +124,7 @@ const Index = () => {
           <div className="flex items-center justify-center">
             <img
               src={hero}
-              alt={book.coverAlt}
+              alt="Ethereal godlike light and celestial clouds illustration for The Divine Gene"
               className="rounded-xl border shadow-2xl"
               loading="eager"
               width={800}
