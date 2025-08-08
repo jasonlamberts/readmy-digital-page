@@ -102,7 +102,7 @@ const Index = () => {
               The Divine Gene
             </h1>
             <p className="mb-6 text-lg text-muted-foreground">
-              {autoSummary ?? 'Import Version 1 to generate a summary shown here.'}
+              Authored by Jason Lamberts
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Button asChild variant="hero" size="xl">
