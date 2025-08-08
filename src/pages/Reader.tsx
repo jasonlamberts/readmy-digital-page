@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { book } from '@/content/book'
 import { TOC } from '@/components/TOC'
@@ -25,6 +25,38 @@ const Reader = () => {
     author: { '@type': 'Person', name: book.author },
     description: current.description ?? book.description,
   }
+
+  // Persist last read location (per device)
+  useEffect(() => {
+    try {
+      localStorage.setItem('reader:last', JSON.stringify({ path: `/read/${current.slug}`, slug: current.slug, ts: Date.now() }))
+    } catch {}
+  }, [current.slug])
+
+  // Restore and persist scroll position for this chapter
+  useEffect(() => {
+    const el = document.getElementById('reader-content') as HTMLElement | null
+    if (!el) return
+    const key = `reader:scroll:${window.location.pathname}`
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      const top = parseInt(saved, 10)
+      if (!Number.isNaN(top)) {
+        el.scrollTop = top
+      }
+    }
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        try { localStorage.setItem(key, String(el.scrollTop)) } catch {}
+        ticking = false
+      })
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [current.slug])
 
   return (
     <div className="min-h-screen bg-background">

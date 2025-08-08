@@ -148,6 +148,38 @@ const VersionReader = () => {
       }
     : undefined
 
+  // Persist last read location (per device)
+  useEffect(() => {
+    if (!current) return
+    try {
+      const path = `/book/the-divine-gene/${encodeURIComponent(version || "Original")}/${current.slug}`
+      localStorage.setItem('reader:last', JSON.stringify({ path, slug: current.slug, version: version || "Original", ts: Date.now() }))
+    } catch {}
+  }, [current?.slug, version])
+
+  // Restore and persist scroll position for this chapter
+  useEffect(() => {
+    const el = document.getElementById('reader-content') as HTMLElement | null
+    if (!el) return
+    const key = `reader:scroll:${window.location.pathname}`
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      const top = parseInt(saved, 10)
+      if (!Number.isNaN(top)) el.scrollTop = top
+    }
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        try { localStorage.setItem(key, String(el.scrollTop)) } catch {}
+        ticking = false
+      })
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [current?.slug])
+
   return (
     <main className="min-h-screen bg-background">
       <SEO
