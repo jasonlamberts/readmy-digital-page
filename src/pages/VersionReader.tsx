@@ -192,11 +192,15 @@ const VersionReader = () => {
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost">
-              <Link to="/">
-                <ArrowLeft className="mr-2 size-4" /> Home
-              </Link>
+            <Link to={`/book/the-divine-gene/${encodeURIComponent(version || "Original")}/${(chapters[0]?.slug || current?.slug) ?? ""}`}>
+              <ArrowLeft className="mr-2 size-4" /> Home
+            </Link>
             </Button>
-            <h1 className="text-xl font-semibold">The Divine Gene</h1>
+            <h1 className="text-xl font-semibold">
+              <Link to={`/book/the-divine-gene/${encodeURIComponent(version || "Original")}/${(chapters[0]?.slug || current?.slug) ?? ""}`} className="hover:underline">
+                The Divine Gene
+              </Link>
+            </h1>
             <span className="text-muted-foreground">• {version}</span>
           </div>
         </header>
