@@ -108,15 +108,15 @@ const Index = () => {
               <Button asChild variant="hero" size="xl">
                 <Link to={primaryReadHref}>Start Reading</Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link to={`/read/${book.chapters[0].slug}`}>Table of Contents</Link>
-              </Button>
-              <Button asChild variant="secondary" size="lg">
-                <Link to="/import">Import Chapter</Link>
-              </Button>
-              <Button asChild variant="secondary" size="lg">
-                <Link to="/import-full">Import Full Book</Link>
-              </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link to={`/versions`}>Choose a Version</Link>
+                </Button>
+                <Button asChild variant="secondary" size="lg">
+                  <Link to="/import">Import Chapter</Link>
+                </Button>
+                <Button asChild variant="secondary" size="lg">
+                  <Link to="/import-full">Import Full Book</Link>
+                </Button>
             </div>
           </div>
         </div>
