@@ -89,8 +89,8 @@ const Index = () => {
   return (
     <main>
       <SEO
-        title={`Read ${book.title} Online | ${book.subtitle ?? 'Read Free'}`}
-        description={book.description}
+        title={"The Divine Gene — Read Online"}
+        description={autoSummary ?? book.description}
         image={hero}
         jsonLd={jsonLd}
       />
@@ -100,14 +100,14 @@ const Index = () => {
           <div className="flex items-center">
             <div className="glass-card rounded-2xl p-8">
               <h1 className="mb-4 text-4xl font-bold leading-tight">
-                Read {book.title} Online
+                The Divine Gene
               </h1>
               <p className="mb-6 text-lg text-muted-foreground">
-                {book.subtitle} — {book.description}
+                {autoSummary ?? 'Import Version 1 to generate a summary shown here.'}
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <Button asChild variant="hero" size="xl">
-                  <Link to={`/read/${book.chapters[0].slug}`}>Start Reading</Link>
+                  <Link to={primaryReadHref}>Start Reading</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
                   <Link to={`/read/${book.chapters[0].slug}`}>Table of Contents</Link>

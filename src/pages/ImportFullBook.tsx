@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { Link } from "react-router-dom"
+import { ArrowLeft } from "lucide-react"
 
 function slugify(input: string) {
   return input
@@ -211,6 +213,11 @@ const ImportFullBook = () => {
         jsonLd={jsonLd}
       />
       <div className="container py-8">
+        <div className="mb-4">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/"><ArrowLeft className="mr-2 h-4 w-4" /> Home</Link>
+          </Button>
+        </div>
         <header className="mb-6">
           <h1 className="text-2xl font-semibold">Import Full Book</h1>
           <p className="text-muted-foreground">
