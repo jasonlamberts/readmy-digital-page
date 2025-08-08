@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      book_versions: {
+        Row: {
+          book_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_versions_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           author: string
@@ -58,6 +93,7 @@ export type Database = {
           slug: string
           title: string
           updated_at: string
+          version_id: string | null
         }
         Insert: {
           book_id: string
@@ -69,6 +105,7 @@ export type Database = {
           slug: string
           title: string
           updated_at?: string
+          version_id?: string | null
         }
         Update: {
           book_id?: string
@@ -80,6 +117,7 @@ export type Database = {
           slug?: string
           title?: string
           updated_at?: string
+          version_id?: string | null
         }
         Relationships: [
           {
@@ -87,6 +125,71 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chapters_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "book_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          anchor: Json | null
+          author_name: string | null
+          book_id: string
+          chapter_id: string
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+          version_id: string | null
+        }
+        Insert: {
+          anchor?: Json | null
+          author_name?: string | null
+          book_id: string
+          chapter_id: string
+          content: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          version_id?: string | null
+        }
+        Update: {
+          anchor?: Json | null
+          author_name?: string | null
+          book_id?: string
+          chapter_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "book_versions"
             referencedColumns: ["id"]
           },
         ]

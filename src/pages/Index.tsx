@@ -1,10 +1,18 @@
 import hero from '@/assets/hero-reading.jpg'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { SEO } from '@/components/SEO'
 import { book } from '@/content/book'
 import { Link } from 'react-router-dom'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { supabase } from '@/integrations/supabase/client'
 
 const Index = () => {
+  const [bookId, setBookId] = useState<string | null>(null)
+  const [versions, setVersions] = useState<Array<{ id: string; name: string; firstSlug: string | null; chapterCount: number }>>([])
+  const [autoSummary, setAutoSummary] = useState<string | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Book',
@@ -12,6 +20,71 @@ const Index = () => {
     author: { '@type': 'Person', name: book.author },
     description: book.description,
   }
+
+  function summarize(text: string, max = 220) {
+    const t = text.replace(/\s+/g, ' ').trim()
+    if (!t) return null
+    if (t.length <= max) return t
+    const periodIdx = t.indexOf('. ')
+    if (periodIdx > 40 && periodIdx < max) return t.slice(0, periodIdx + 1)
+    return t.slice(0, max - 1) + '…'
+  }
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const { data: b } = await supabase
+          .from('books')
+          .select('id')
+          .eq('title', 'The Divine Gene')
+          .maybeSingle()
+        if (!b?.id) return
+        setBookId(b.id)
+
+        const { data: vers } = await supabase
+          .from('book_versions')
+          .select('id,name')
+          .eq('book_id', b.id)
+          .order('created_at', { ascending: true })
+        if (!vers || vers.length === 0) return
+
+        const versionIds = vers.map(v => v.id)
+        const { data: chs } = await supabase
+          .from('chapters')
+          .select('id,slug,order_index,version_id,description,content')
+          .eq('book_id', b.id)
+          .in('version_id', versionIds)
+          .order('order_index', { ascending: true })
+
+        const byVersion: Record<string, { firstSlug: string | null; count: number }> = {}
+        vers.forEach(v => (byVersion[v.id] = { firstSlug: null, count: 0 }))
+        const chapters = chs || []
+        chapters.forEach(c => {
+          const v = byVersion[c.version_id as string]
+          if (!v) return
+          v.count += 1
+          if (!v.firstSlug) v.firstSlug = c.slug
+        })
+        setVersions(vers.map(v => ({ id: v.id, name: v.name, firstSlug: byVersion[v.id]?.firstSlug || null, chapterCount: byVersion[v.id]?.count || 0 })))
+
+        // Auto-summary from the first version's chapters
+        const firstVersionId = vers[0].id
+        const firstChapters = chapters.filter(c => c.version_id === firstVersionId)
+        const joined = firstChapters.map(c => c.description || c.content?.split('\
+\
+')[0] || '').join(' ')
+        setAutoSummary(summarize(joined))
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const primaryReadHref = versions.length > 0 && versions[0].firstSlug
+    ? `/book/the-divine-gene/${encodeURIComponent(versions[0].name)}/${versions[0].firstSlug}`
+    : `/read/${book.chapters[0].slug}`
 
   return (
     <main>

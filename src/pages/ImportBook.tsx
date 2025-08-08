@@ -29,6 +29,7 @@ const ImportBook = () => {
   const { toast } = useToast()
   const [bookTitle, setBookTitle] = useState("The Divine Gene")
   const [author, setAuthor] = useState("")
+  const [versionName, setVersionName] = useState("Original")
 
   const [chapterTitle, setChapterTitle] = useState("")
   const [chapterContent, setChapterContent] = useState("")
@@ -64,16 +65,37 @@ const ImportBook = () => {
     return inserted!.id as string
   }, [author])
 
-  const nextOrderIndex = useCallback(async (bookId: string) => {
-    const { data, error } = await supabase
+  const ensureVersion = useCallback(async (bookId: string, nameRaw: string) => {
+    const name = (nameRaw || "Original").trim()
+    // Try to find existing version
+    const { data: existing, error: existErr } = await supabase
+      .from("book_versions")
+      .select("id")
+      .eq("book_id", bookId)
+      .eq("name", name)
+      .maybeSingle()
+    if (existErr && existErr.code !== "PGRST116") throw existErr
+    if (existing?.id) return existing.id as string
+
+    const { data: inserted, error: insErr } = await supabase
+      .from("book_versions")
+      .insert({ book_id: bookId, name })
+      .select("id")
+      .single()
+    if (insErr) throw insErr
+    return inserted!.id as string
+  }, [])
+
+  const nextOrderIndex = useCallback(async (bookId: string, versionId?: string) => {
+    let query = supabase
       .from("chapters")
       .select("order_index")
-      .eq("book_id", bookId)
-      .order("order_index", { ascending: false })
-      .limit(1)
+      .eq("book_id", bookId) as any
+    if (versionId) query = query.eq("version_id", versionId)
+    const { data, error } = await query.order("order_index", { ascending: false }).limit(1)
     if (error) throw error
-    const max = data && data.length > 0 ? data[0].order_index || 0 : 0
-    return (max as number) + 1
+    const max = data && data.length > 0 ? (data[0].order_index as number) || 0 : 0
+    return max + 1
   }, [])
 
   const uniqueSlug = useCallback(async (bookId: string, slug: string) => {
@@ -97,11 +119,13 @@ const ImportBook = () => {
     try {
       setSaving(true)
       const bookId = await ensureBook(bookTitle)
-      const order = await nextOrderIndex(bookId)
+      const versionId = await ensureVersion(bookId, versionName)
+      const order = await nextOrderIndex(bookId, versionId)
       const finalSlug = await uniqueSlug(bookId, baseSlug)
 
       const { error: chErr } = await supabase.from("chapters").insert({
         book_id: bookId,
+        version_id: versionId,
         slug: finalSlug,
         title: chapterTitle.trim(),
         description: summary || null,
@@ -112,7 +136,7 @@ const ImportBook = () => {
 
       toast({
         title: "Chapter saved",
-        description: "We analyzed the content and generated a summary for the TOC.",
+        description: `Saved to ${bookTitle} — ${versionName}. Summary generated for the TOC.`,
       })
       setChapterTitle("")
       setChapterContent("")
@@ -125,7 +149,7 @@ const ImportBook = () => {
     } finally {
       setSaving(false)
     }
-  }, [canSave, ensureBook, bookTitle, nextOrderIndex, uniqueSlug, baseSlug, chapterTitle, chapterContent, summary, toast])
+  }, [canSave, ensureBook, bookTitle, ensureVersion, versionName, nextOrderIndex, uniqueSlug, baseSlug, chapterTitle, chapterContent, summary, toast])
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -155,7 +179,7 @@ const ImportBook = () => {
               <CardTitle>Book & Chapter</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-sm text-muted-foreground">Book Title</label>
                   <Input value={bookTitle} onChange={(e) => setBookTitle(e.target.value)} placeholder="The Divine Gene" />
@@ -163,6 +187,10 @@ const ImportBook = () => {
                 <div>
                   <label className="mb-1 block text-sm text-muted-foreground">Author (optional)</label>
                   <Input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Your Name" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm text-muted-foreground">Version</label>
+                  <Input value={versionName} onChange={(e) => setVersionName(e.target.value)} placeholder="Original / v1 / 2025-edition" />
                 </div>
               </div>
 
@@ -197,6 +225,10 @@ const ImportBook = () => {
               <div>
                 <div className="text-sm text-muted-foreground">Slug</div>
                 <div className="font-mono text-sm">{baseSlug}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Version</div>
+                <div className="text-sm">{versionName || "Original"}</div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Summary (for TOC)</div>

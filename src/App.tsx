@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Reader from "./pages/Reader";
 import ImportBook from "./pages/ImportBook";
+import VersionReader from "./pages/VersionReader";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -17,14 +18,15 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/read" element={<Navigate to="/read/introduction" replace />} />
-            <Route path="/read/:slug" element={<Reader />} />
-            <Route path="/import" element={<ImportBook />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/read" element={<Navigate to="/read/introduction" replace />} />
+              <Route path="/read/:slug" element={<Reader />} />
+              <Route path="/import" element={<ImportBook />} />
+              <Route path="/book/the-divine-gene/:version/:slug" element={<VersionReader />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
