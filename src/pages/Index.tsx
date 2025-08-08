@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { SEO } from '@/components/SEO'
 import { book } from '@/content/book'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { supabase } from '@/integrations/supabase/client'
@@ -24,17 +24,7 @@ const Index = () => {
   }
 
   // Auto-redirect to last read location if available
-  const navigate = useNavigate()
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('reader:last')
-      if (!raw) return
-      const last = JSON.parse(raw)
-      if (last?.path && typeof last.path === 'string') {
-        navigate(last.path, { replace: true })
-      }
-    } catch {}
-  }, [])
+  
 
   function summarize(text: string, max = 220) {
     const t = text.replace(/\s+/g, ' ').trim()
