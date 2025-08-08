@@ -70,12 +70,12 @@ const Reader = () => {
         <header className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost">
-            <Link to={`/read/${book.chapters[0].slug}`}>
+            <Link to="/">
               <ArrowLeft className="mr-2 size-4" /> Home
             </Link>
             </Button>
             <h1 className="text-xl font-semibold">
-              <Link to={`/read/${book.chapters[0].slug}`} className="hover:underline">
+              <Link to="/" className="hover:underline">
                 {book.title}
               </Link>
             </h1>
