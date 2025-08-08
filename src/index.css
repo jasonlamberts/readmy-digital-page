@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,20 +41,26 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Brand & Motion */
+    --brand: 248 85% 60%; /* indigo */
+    --brand-glow: 220 90% 62%; /* azure */
+
+    /* Gradients & Shadows */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--brand) / 0.9), hsl(var(--brand-glow) / 0.9));
+    --shadow-elegant: 0 20px 60px -20px hsl(var(--brand) / 0.3), 0 6px 20px -8px hsl(var(--brand-glow) / 0.25);
+    --shadow-glow: 0 0 0 1px hsl(var(--brand) / 0.25), 0 12px 40px -12px hsl(var(--brand-glow) / 0.35);
+
+    /* Typography */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-serif: 'Newsreader', ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
   }
 
   .dark {
@@ -100,6 +108,38 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    @apply bg-background text-foreground antialiased;
+  }
+
+  h1, h2, h3 {
+    font-feature-settings: "ss01" on, "ss02" on;
+  }
+}
+
+@layer components {
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+  .glass-card {
+    background: hsl(var(--card) / 0.65);
+    backdrop-filter: saturate(140%) blur(10px);
+    -webkit-backdrop-filter: saturate(140%) blur(10px);
+    box-shadow: var(--shadow-elegant);
+    border: 1px solid hsl(var(--border));
+  }
+  .btn-hero {
+    background: var(--gradient-hero);
+    color: hsl(var(--primary-foreground));
+    box-shadow: var(--shadow-glow);
+    transition: var(--transition-smooth, all 0.25s cubic-bezier(0.4, 0, 0.2, 1));
+  }
+  .btn-hero:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 48px -12px hsl(var(--brand-glow) / 0.45);
+  }
+  .reader-article {
+    font-family: var(--font-serif);
+    line-height: 1.8;
   }
 }

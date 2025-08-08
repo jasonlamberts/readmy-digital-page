@@ -1,0 +1,75 @@
+import { useMemo, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { book } from '@/content/book'
+import { TOC } from '@/components/TOC'
+import { ReaderControls } from '@/components/ReaderControls'
+import { SEO } from '@/components/SEO'
+import { ProgressBar } from '@/components/ProgressBar'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
+
+const Reader = () => {
+  const { slug } = useParams()
+  const current = useMemo(() => book.chapters.find(c => c.slug === slug) ?? book.chapters[0], [slug])
+  const [fontSize, setFontSize] = useState<number>(18)
+
+  const inc = () => setFontSize((v) => Math.min(28, v + 1))
+  const dec = () => setFontSize((v) => Math.max(14, v - 1))
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: `${book.title}: ${current.title}`,
+    author: { '@type': 'Person', name: book.author },
+    description: current.description ?? book.description,
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <SEO
+        title={`Read ${book.title} — ${current.title}`}
+        description={current.description ?? book.description}
+        jsonLd={jsonLd}
+      />
+
+      <div className="container py-6">
+        <header className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button asChild variant="ghost">
+              <Link to="/">
+                <ArrowLeft className="mr-2 size-4" /> Home
+              </Link>
+            </Button>
+            <h1 className="text-xl font-semibold">{book.title}</h1>
+          </div>
+          <ReaderControls fontSize={fontSize} onFontDec={dec} onFontInc={inc} />
+        </header>
+
+        <div className="grid gap-6 md:grid-cols-[280px_1fr]">
+          <aside className="md:sticky md:top-6 md:h-[calc(100vh-5rem)] md:overflow-y-auto">
+            <TOC current={current.slug} />
+          </aside>
+
+          <section className="rounded-lg border">
+            <ProgressBar />
+            <div id="reader-content" className="max-h-[calc(100vh-8rem)] overflow-y-auto p-6">
+              <article className="reader-article mx-auto max-w-3xl">
+                <h2 className="mb-2 text-3xl font-semibold tracking-tight">{current.title}</h2>
+                {current.description && (
+                  <p className="mb-6 text-muted-foreground">{current.description}</p>
+                )}
+                {current.content.split('\n\n').map((para, i) => (
+                  <p key={i} className="mb-5" style={{ fontSize }}>
+                    {para}
+                  </p>
+                ))}
+              </article>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Reader
