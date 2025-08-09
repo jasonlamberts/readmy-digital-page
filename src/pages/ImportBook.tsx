@@ -67,34 +67,71 @@ const ImportBook = () => {
     return inserted!.id as string
   }, [author])
 
-  const ensureVersion = useCallback(async (bookId: string, nameRaw: string) => {
-    const name = (nameRaw || "Original").trim()
+  const ensureVersion = useCallback(async (bookId: string, nameRaw: string): Promise<{ id: string; name: string }> => {
+    const base = (nameRaw || "Original").trim()
     // Try to find existing version
     const { data: existing, error: existErr } = await supabase
       .from("book_versions")
-      .select("id")
+      .select("id, name")
       .eq("book_id", bookId)
-      .eq("name", name)
+      .eq("name", base)
       .maybeSingle()
     if (existErr && existErr.code !== "PGRST116") throw existErr
-    if (existing?.id) return existing.id as string
+
+    const computeNext = (b: string, names: Set<string>) => {
+      const numericOnly = /^\d+$/.test(b)
+      const suffixMatch = /^(.*?)(\d+)$/.exec(b)
+      if (numericOnly) {
+        let n = parseInt(b, 10) + 1
+        while (names.has(String(n))) n++
+        return String(n)
+      }
+      if (suffixMatch) {
+        let prefix = suffixMatch[1]
+        let n = parseInt(suffixMatch[2], 10) + 1
+        let cand = `${prefix}${n}`
+        while (names.has(cand)) { n++; cand = `${prefix}${n}` }
+        return cand
+      }
+      let n = 2
+      let cand = `${b}${n}`
+      while (names.has(cand)) { n++; cand = `${b}${n}` }
+      return cand
+    }
+
+    if (existing?.id) {
+      const { data: all } = await supabase
+        .from("book_versions")
+        .select("name")
+        .eq("book_id", bookId)
+      const names = new Set<string>((all || []).map((r: any) => r.name as string))
+      const next = computeNext(base, names)
+      const { data: inserted, error: insErr } = await supabase
+        .from("book_versions")
+        .insert({ book_id: bookId, name: next })
+        .select("id")
+        .single()
+      if (insErr) throw insErr
+      setVersionName(next)
+      return { id: inserted!.id as string, name: next }
+    }
 
     const { data: inserted, error: insErr } = await supabase
       .from("book_versions")
-      .insert({ book_id: bookId, name })
+      .insert({ book_id: bookId, name: base })
       .select("id")
       .single()
     if (insErr) throw insErr
-    return inserted!.id as string
-  }, [])
+    return { id: inserted!.id as string, name: base }
+  }, [setVersionName])
 
-  const nextOrderIndex = useCallback(async (bookId: string, versionId?: string) => {
-    let query = supabase
+  const nextOrderIndex = useCallback(async (bookId: string, _versionId?: string) => {
+    const { data, error } = await supabase
       .from("chapters")
       .select("order_index")
-      .eq("book_id", bookId) as any
-    if (versionId) query = query.eq("version_id", versionId)
-    const { data, error } = await query.order("order_index", { ascending: false }).limit(1)
+      .eq("book_id", bookId)
+      .order("order_index", { ascending: false })
+      .limit(1)
     if (error) throw error
     const max = data && data.length > 0 ? (data[0].order_index as number) || 0 : 0
     return max + 1
@@ -121,8 +158,8 @@ const ImportBook = () => {
     try {
       setSaving(true)
       const bookId = await ensureBook(bookTitle)
-      const versionId = await ensureVersion(bookId, versionName)
-      const order = await nextOrderIndex(bookId, versionId)
+      const { id: versionId, name: finalVersionName } = await ensureVersion(bookId, versionName)
+      const order = await nextOrderIndex(bookId)
       const finalSlug = await uniqueSlug(bookId, baseSlug)
 
       const { error: chErr } = await supabase.from("chapters").insert({
