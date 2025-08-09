@@ -1,4 +1,5 @@
 import hero from '@/assets/hero-divine.jpg'
+import archangel from '@/assets/archangel-michael.jpg'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { SEO } from '@/components/SEO'
@@ -115,24 +116,31 @@ const Index = () => {
       <section className="relative overflow-hidden">
         <div className="hero-gradient absolute inset-0" aria-hidden />
         <div className="container relative min-h-screen py-20 flex items-center justify-center">
-          <div className="glass-card rounded-2xl p-8 max-w-2xl">
-            <h1 className="mb-4 text-4xl font-bold leading-tight">
-              The Divine Gene
-            </h1>
-            <p className="mb-6 text-lg text-muted-foreground">
-              Authored by Jason Lamberts
-            </p>
-              <div className="flex flex-col items-center gap-4">
-                <Button variant="hero" size="xl" onClick={() => setVersionsOpen(true)}>
-                  Start Reading
-                </Button>
-                <Button asChild variant="secondary" size="sm">
-                  <Link to="/import">Import Chapter</Link>
-                </Button>
-                <Button asChild variant="secondary" size="sm">
-                  <Link to="/import-full">Import Full Book</Link>
-                </Button>
-              </div>
+          <div className="glass-card relative overflow-hidden rounded-2xl p-8 max-w-2xl">
+            <div
+              className="absolute inset-0 bg-center bg-cover opacity-40 pointer-events-none"
+              style={{ backgroundImage: `url(${archangel})` }}
+              aria-hidden
+            />
+            <div className="relative z-10">
+              <h1 className="mb-4 text-4xl font-bold leading-tight">
+                The Divine Gene
+              </h1>
+              <p className="mb-6 text-lg text-muted-foreground">
+                Authored by Jason Lamberts
+              </p>
+                <div className="flex flex-col items-center gap-4">
+                  <Button variant="hero" size="xl" onClick={() => setVersionsOpen(true)}>
+                    Start Reading
+                  </Button>
+                  <Button asChild variant="secondary" size="sm">
+                    <Link to="/import">Import Chapter</Link>
+                  </Button>
+                  <Button asChild variant="secondary" size="sm">
+                    <Link to="/import-full">Import Full Book</Link>
+                  </Button>
+                </div>
+            </div>
           </div>
         </div>
       </section>
