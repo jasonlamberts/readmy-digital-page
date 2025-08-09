@@ -126,15 +126,12 @@ const Index = () => {
               <h1 className="mb-4 text-4xl font-bold leading-tight">
                 The Divine Gene
               </h1>
-              <p className="mb-6 text-lg text-muted-foreground">
+              <p className="mb-6 text-lg text-foreground">
                 Authored by Jason Lamberts
               </p>
                 <div className="flex flex-col items-center gap-4">
                   <Button variant="hero" size="xl" onClick={() => setVersionsOpen(true)}>
                     Start Reading
-                  </Button>
-                  <Button asChild variant="secondary" size="sm">
-                    <Link to="/import">Import Chapter</Link>
                   </Button>
                   <Button asChild variant="secondary" size="sm">
                     <Link to="/import-full">Import Full Book</Link>
